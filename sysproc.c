@@ -9,6 +9,9 @@
 #ifdef PDX_XV6
 #include "pdx-kernel.h"
 #endif // PDX_XV6
+#ifdef CS333_P2
+#include "uproc.h"
+#endif //CS333_P2
 
 int
 sys_fork(void)
@@ -97,3 +100,77 @@ sys_halt(void)
   return 0;
 }
 #endif // PDX_XV6
+
+#ifdef CS333_P1
+int
+sys_date(void)
+{
+  struct rtcdate *current_date;
+  if(argptr(0, (void*)&current_date, sizeof(struct rtcdate)) < 0)
+    return -1;
+  cmostime(current_date);
+  return 0;
+}
+#endif //CS333_P1
+
+#ifdef CS333_P2
+uint
+sys_getuid(void)
+{
+  return myproc()->uid;
+}
+
+uint 
+sys_getgid(void)
+{
+  return myproc()->gid;
+}
+
+uint
+sys_getppid(void)
+{
+  if(!myproc()->parent)
+    return myproc()->pid;
+  else
+    return myproc()->parent->pid;
+}
+
+int
+sys_setuid(void)
+{
+  int n;
+  argint(0, &n);
+  if(n < 0 || n > 32767)
+    return -1;
+  myproc()->uid = n;
+  return 0;
+}
+
+int
+sys_setgid(void)
+{
+  int n;
+  argint(0, &n);
+  if(n < 0 || n > 32767)
+    return -1;
+  myproc()->gid = n;
+  return 0;
+}
+
+int
+sys_getprocs(void)
+{
+  int max;
+  int copied;
+  argint(0, &max);
+  if(max < 1){
+    return -1;
+  }
+  struct uproc* table;
+  if(argptr(1, (void*)&table, (sizeof(struct uproc) * max)) <0){
+    return -1;
+  }
+  copied = getProcs(max, table);
+  return copied;
+}
+#endif //CS333_P2

@@ -73,6 +73,10 @@ initcode.S
 usys.S
 init.c
 sh.c
+p2_test.c
+ps.c
+time.c
+ps_test.c
 
 # bootloader
 bootasm.S

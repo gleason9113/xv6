@@ -49,6 +49,9 @@ exitiputtest(void)
   pid = fork();
   if(pid < 0){
     printf(stdout, "fork failed\n");
+    if(pid == -2){
+      printf(stdout, "first\n");
+    }
     exit();
   }
   if(pid == 0){
