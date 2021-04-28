@@ -1099,7 +1099,17 @@ procdumpP2P3P4(struct proc *p, char *state_string)
   else{
     cprintf("\t");
   }
-  cprintf("%d.%d\t%s\t%d\t", cpu_secs, cpu_frac, state_string, p->sz);
+  cprintf("%d.%d", cpu_secs, cpu_frac);
+  if(cpu_frac < 10){
+    cprintf("%s\t", "00");
+  }
+  else if(cpu_frac < 100){
+    cprintf("%s\t", "0");
+  }
+  else{
+    cprintf("\t");
+  }
+  cprintf("%s\t%d\t", state_string, p->sz);
   
   return;
 }
