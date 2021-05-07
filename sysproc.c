@@ -174,3 +174,31 @@ sys_getprocs(void)
   return copied;
 }
 #endif //CS333_P2
+#ifdef CS333_P4
+int
+sys_getpriority(void)
+{
+  int pid;
+  int priority;
+  argint(0, &pid);
+  if(pid < 1 || pid > NPROC) //Change this to the constant!!!
+    return -1; //Invalid PID was provided
+  priority = getPriority(pid); //Returns -1 if process is UNUSED or no process matching the PID exists
+  return priority; 
+}
+
+int
+sys_setpriority(void)
+{
+  int pid, priority, new_priority;
+  argint(0, &pid);
+  argint(1, &priority);
+  if(pid < 1 || pid > NPROC)
+    return -1; //Invalid PID
+  if(priority < 0 || priority > MAXPRIO)
+    return -1; //Invalid priority
+  new_priority = setPriority(pid, priority); //setPriority returns -1 for errors, otherwise returns new priority value
+  return new_priority;
+}
+#endif //CS333_P4
+

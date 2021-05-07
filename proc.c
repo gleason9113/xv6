@@ -38,6 +38,10 @@ static struct {
 #ifdef CS333_P3
   struct ptrs list[statecount];
 #endif //CS333_P3
+#ifdef CS333_P4
+  struct ptrs ready[MAXPRIO+1];
+  uint PromoteAtTime;
+#endif //CS333_P4
 } ptable;
 
 // list management function prototypes
@@ -175,6 +179,10 @@ allocproc(void)
     p->gid = 0;
   }
 #endif //CS333_P2
+#ifdef CS333_P4
+  p->priority = MAXPRIO;
+  p->budget = DEFAULT_BUDGET;
+#endif
   p->cpu_ticks_total = 0; //Initialize value to 0- update in sched()
   p->cpu_ticks_in = 0;  //Initialize value to 0- update in scheduler()
 
@@ -257,6 +265,9 @@ userinit(void)
   acquire(&ptable.lock);
   initProcessLists();
   initFreeList();
+#ifdef CS333_P4
+  ptable.PromoteAtTime = ticks + TICKS_TO_PROMOTE;
+#endif //CS333_P4
   release(&ptable.lock);
   struct proc *p;
   extern char _binary_initcode_start[], _binary_initcode_size[];
@@ -675,6 +686,67 @@ wait(void)
 }
 #endif //CS333_P2 version wait()
 
+#ifdef CS333_P4
+void
+scheduler(void)
+{
+  struct proc *p;
+  struct cpu *c = mycpu();
+  c->proc = 0;
+#ifdef PDX_XV6
+  int idle;  // for checking if processor is idle
+#endif // PDX_XV6
+
+  for(;;){
+    // Enable interrupts on this processor.
+    sti();
+
+#ifdef PDX_XV6
+    idle = 1;  // assume idle unless we schedule a process
+#endif // PDX_XV6
+    // Loop over process table looking for process to run.
+    acquire(&ptable.lock); //Trigger for panic on CPU0
+    p = ptable.list[RUNNABLE].head; //Correct method for getting the next RUNNABLE proc?
+
+      // Switch to chosen process.  It is the process's job
+      // to release ptable.lock and then reacquire it
+      // before jumping back to us.
+#ifdef PDX_XV6
+    if(p){
+        idle = 0;  // not idle this timeslice
+#endif // PDX_XV6
+        c->proc = p;
+        switchuvm(p);
+        if(stateListRemove(&ptable.list[RUNNABLE], p) == -1){
+          panic("Unable to start process!\n");
+        }
+        assertState(p, RUNNABLE, __FUNCTION__, __LINE__);
+        p->state = RUNNING;
+        stateListAdd(&ptable.list[RUNNING], p);
+#ifdef CS333_P2
+        p->cpu_ticks_in = ticks;
+#endif //CS333_P2
+        swtch(&(c->scheduler), p->context);
+        switchkvm();
+
+      // Process is done running for now.
+      // It should have changed its p->state before coming back.
+        c->proc = 0;
+    } 
+    release(&ptable.lock);
+#ifdef PDX_XV6
+    // if idle, wait for next interrupt
+    if (idle) {
+      sti();
+      hlt();
+    }
+#endif // PDX_XV6
+ } 
+}
+#endif //CS333_P4 version scheduler
+
+
+#ifndef CS333_P4
 #ifdef CS333_P3
 void
 scheduler(void)
@@ -794,7 +866,7 @@ scheduler(void)
   }
 }
 #endif //CS333_P2 version scheduler()
-
+#endif //CS333_P3/P2 versions
 // Enter scheduler.  Must hold only ptable.lock
 // and have changed proc->state. Saves and restores
 // intena because intena is a property of this
@@ -1048,6 +1120,7 @@ kill(int pid)
       return 0;
     }
   }
+  }
   release(&ptable.lock);
   return -1;
 }
@@ -1091,7 +1164,12 @@ procdumpP2P3P4(struct proc *p, char *state_string)
     cprintf("\t");
   }
   cprintf("%d\t", p->gid);
+#ifdef CS333_P4
+  cprintf("%d\t%d\t%d.%d", ppid, p->priority, secs, frac_secs);
+#endif //CS333_P4
+#ifndef CS333_P4
   cprintf("%d\t%d.%d", ppid, secs, frac_secs);
+#endif //CS333_P3 version
   if(frac_secs < 10){
     cprintf("%s\t", "00");
   }
@@ -1508,6 +1586,9 @@ getProcs(int max, struct uproc *table)
       else{
         t_ptr->ppid = p->pid;
       }
+#ifdef CS333_P4
+      t_ptr->priority = p->priority;
+#endif //CS333_P4
       t_ptr->elapsed_ticks = ticks - p->start_ticks;
       t_ptr->CPU_total_ticks = p->cpu_ticks_total;
       safestrcpy(t_ptr->state, states[p->state], STRMAX);
@@ -1522,3 +1603,39 @@ getProcs(int max, struct uproc *table)
 
 }
 #endif //CS333_P2
+#ifdef CS333_P4
+int
+getPriority(int pid)
+{
+  struct proc* p;
+  acquire(&ptable.lock);
+  for(int i = EMBRYO; i <=ZOMBIE; ++i){
+    p = ptable.list[i].head;
+    while(p){
+      if(p->pid == pid)
+        return p->priority;
+      p = p->next;
+    }
+  }
+  release(&ptable.lock);
+  return -1; //PID not found or PID in UNUSED list
+}
+
+int
+setPriority(int pid, int priority)
+{
+  struct proc* p;
+  acquire(&ptable.lock);
+  for(int i = SLEEPING; i <= RUNNING; ++i){
+    p = ptable.list[i].head;
+    while(p){
+      if(p->pid == pid){
+        p->priority = priority;
+        return priority;
+      }
+      p = p->next;
+    }
+  }
+  return -1; //PID not found in a ready state
+}
+#endif //CS333_P4

@@ -61,6 +61,10 @@ struct proc {
 #ifdef CS333_P3
   struct proc * next;
 #endif //CS333_P3
+#ifdef CS333_P4
+  uint priority;
+  uint budget;
+#endif //CS333_P4
 };
 
 // Process memory is laid out contiguously, low addresses first:
