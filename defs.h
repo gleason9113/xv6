@@ -140,7 +140,6 @@ struct proc*    findProc(int);
 int             getPriority(int);
 int             setPriority(int, int);
 void            promoteProc(struct proc*);
-void            demoteProc(struct proc*);
 void            assertPriority(struct proc*);
 struct proc*    findReady(void);
 #endif //CS333_P4

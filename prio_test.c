@@ -2,36 +2,57 @@
 #include "types.h"
 #include "user.h"
 
+int setPriority(int new_value){
+  printf(1, "\n");
+  printf(1, "MAXPRIO == %d", MAXPRIO);
+  printf(1, " Set priority to: %d\n", new_value);
+  int result = setpriority(getpid(), new_value);
+  printf(1, "Sleeping briefly- press C-p now to check priority.\n");
+  printf(1, "If new priority is in range [0, MAXPRIO] and priority is not set, this test FAILS.\n");
+  printf(1, "If new priority is out of range [0, MAXPRIO] and priority is set, this test FAILS.\n\n");
+  sleep(3 * TPS);
+  return result;
+}
+
 int
 main(void)
 {
-  printf(1, "This program will test the set/get priority syscalls.\n");
-  printf(1, "This process will now set its priority to 3 (Valid value).\n");
-  int set_result = setpriority(getpid(), 3);
-  if(set_result == -1){
-    printf(2, "Error setting priority!\n");
-    exit();
+  int test_val = MAXPRIO - 1;
+  if(test_val < 0)
+    test_val *= -1;
+  printf(1, "Attempt to set priority to negative value (-5).\n");
+  if(setPriority(-5) == -1){
+    printf(1, "Attempt to set priority to negative value failed. This test PASSED!\n");
   }
-  printf(1, "Priority set. Sleeping briefly. Press ctrl-p now.\n");
-  sleep(3 * TPS);
-  printf(1, "Setting priority to invalid value (MAXPRIO + 3)\n");
-  set_result = setpriority(getpid(), MAXPRIO + 3);
-  if(set_result != -1){
-    printf(2, "Invalid priority set! \n");
-    exit();
+  else{
+    printf(1, "Attempt to set priority to negative value succeeded. This test FAILED!\n");
   }
-  printf(1, "Press ctrl-p now. Verify that Prio is 3.\n");
-  sleep(3 * TPS);
-  printf(1, "Setting priority to invalid value (-4).\n");
-  set_result = setpriority(getpid(), -4);
-  if(set_result != -1){
-    printf(2, "Invalid priority set! \n");
-    exit();
+  printf(1, "Attempt to set priority to 0.\n");
+  if(setPriority(0) == -1){
+    printf(1, "Attempt to set priority to 0 failed. This test FAILED!\n");
   }
-  printf(1, "Press ctrl-p now. Verify that Prio is 3.\n");
-  sleep(3 * TPS);
-  printf(1, "Test complete! \n");
+  else{
+    printf(1, "Attempt to set priority to 0 succeeded. This test PASSED! \n");
+  }
+  printf(1, "Attempt to set priority to MAXPRIO - 1. If MAXPRIO is 0, this will attempt to set priority to 1 (Invalid).\n");
+  if(setPriority(test_val) == -1){
+    if(MAXPRIO == 0){
+      printf(1, "Attempt to set priority higher than MAXPRIO 0 failed. This test PASSED!\n");
+    }
+    else{
+      printf(1, "Attempt to set priority to valid value failed. This test FAILED!\n");
+    }
+  }
+  printf(1, "Attempt to set priority to MAXPRIO + 1.\n");
+  if(setPriority(MAXPRIO + 1) == -1){
+    printf(1, "Attempt to set priority higher than MAXPRIO failed.  This test PASSED!\n");
+  }
+  else{
+    printf(1, "Attempt to set priority higher tham MAXPRIO succeeded. This test FAILED!|n");
+  }
   exit();
 }
+
+
 
 #endif //CS333_P4

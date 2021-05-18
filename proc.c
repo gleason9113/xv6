@@ -741,26 +741,27 @@ scheduler(void)
     // Loop over process table looking for process to run.
     acquire(&ptable.lock); //Trigger for panic on CPU0
     //Check for promotion- loop through ready lists
-    /*
+    
     if(ticks >= ptable.PromoteAtTime){
       struct proc* promote;
       struct proc* temp;
-      for(int j = MAXPRIO - 2; j >= 0; --j){
-        promote = ptable.ready[j].head;
-        while(promote){
-          temp = promote->next;
-          if(stateListRemove(&ptable.ready[promote->priority], promote) == -1){
-            panic("Unable to promote process! \n");
+      if(MAXPRIO > 0){
+        for(int j = MAXPRIO - 1; j >= 0; --j){
+          promote = ptable.ready[j].head;
+          while(promote){
+            temp = promote->next;
+            if(stateListRemove(&ptable.ready[promote->priority], promote) == -1){
+              panic("Unable to promote process! \n");
+            }
+            promoteProc(promote); 
+            stateListAdd(&ptable.ready[promote->priority], promote);
+            promote = temp;
           }
-          promoteProc(promote); 
-          stateListAdd(&ptable.ready[promote->priority], promote);
-          promote = temp;
         }
       }
       ptable.PromoteAtTime = ticks + TICKS_TO_PROMOTE;
     }
-*/
-//    p = ptable.ready[i].head;
+
       do {
         p = ptable.ready[i].head;
         if(p)
@@ -777,7 +778,8 @@ scheduler(void)
 #endif // PDX_XV6
         c->proc = p;
         switchuvm(p);
-        if(stateListRemove(&ptable.ready[MAXPRIO], p) == -1){
+        if(stateListRemove(&ptable.ready[p->priority], p) == -1){
+          
           panic("Unable to start ready process!\n");
         }
         assertState(p, RUNNABLE, __FUNCTION__, __LINE__);
@@ -970,7 +972,12 @@ yield(void)
   curproc->state = RUNNABLE;
 #ifdef CS333_P4
   curproc->budget = curproc->budget - (ticks - curproc->cpu_ticks_in);
-//  demoteProc(curproc);
+  if(curproc->budget <= 0){
+    curproc->budget = DEFAULT_BUDGET;
+    if(MAXPRIO > 0 && curproc->priority > 0){
+      curproc->priority = curproc->priority - 1;
+    }
+  }
   stateListAdd(&ptable.ready[curproc->priority], curproc);
 #else
   stateListAdd(&ptable.list[RUNNABLE], curproc);
@@ -1039,7 +1046,13 @@ sleep(void *chan, struct spinlock *lk)
   }
 #ifdef CS333_P4
   p->budget = p->budget - (ticks - p->cpu_ticks_in);
- // demoteProc(p);
+  if(p->budget <= 0){
+    p->budget = DEFAULT_BUDGET;
+    if(MAXPRIO > 0 && p->priority > 0){
+      p->priority = p->priority - 1;
+    }
+  }
+
 #endif //CS333_P4
   assertState(p, RUNNING, __FUNCTION__, __LINE__);
   p->state = SLEEPING;
@@ -1823,27 +1836,6 @@ promoteProc(struct proc* p){
   return;
 }
 
-//Demote a process
-//Accepts pointer to proc struct
-//If priority > 0, decrement
-//Reset budget
-//ptable lock must be held by calling process
-
-void 
-demoteProc(struct proc* p){
-  if(!p)
-    panic("Attempt to demote null process!\n");
-  if(p->budget <= 0){
-    p->budget = DEFAULT_BUDGET;
-    if(MAXPRIO > 0 && p->priority > 0){
-      p->priority--;
-    }
-  }
-  if(p->priority < 0 || p->priority > (MAXPRIO - 1)){
-    panic("Process demoted out of bounds!\n");
-  }
-  return;
-}
 
 void
 assertPriority(struct proc* p){
