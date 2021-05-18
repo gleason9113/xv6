@@ -193,12 +193,15 @@ sys_setpriority(void)
   int pid, priority, new_priority;
   argint(0, &pid);
   argint(1, &priority);
-  if(pid < 1 || pid > NPROC)
+  if(pid < 1)
     return -1; //Invalid PID
   if(priority < 0 || priority > MAXPRIO)
     return -1; //Invalid priority
   new_priority = setPriority(pid, priority); //setPriority returns -1 for errors, otherwise returns new priority value
-  return new_priority;
+  if(new_priority >= 0){
+    return 0; //Success
+  }
+  return -1; //failure
 }
 #endif //CS333_P4
 

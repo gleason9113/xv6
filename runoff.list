@@ -81,6 +81,9 @@ p3_sleep.c
 p3_zomb.c
 p3_killtest.c
 loopforever.c
+prio_test.c
+p4-priority.c
+budget-test.c
 
 # bootloader
 bootasm.S

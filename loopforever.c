@@ -1,4 +1,4 @@
-#ifdef CS333_P3
+#ifdef CS333_P4
 #include "types.h"
 #include "user.h"
 #include "pdx.h"
@@ -46,6 +46,6 @@ main(int argc, char *argv[])
   printf(1, "Parent exiting!\n");
   exit();
 }
-#endif
+#endif //CS333_P4
 
 //Source:  https://web.cecs.pdx.edu/~markem/CS333/handouts`

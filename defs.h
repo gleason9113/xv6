@@ -134,10 +134,15 @@ int            getProcs(int, struct uproc*);
 void            printFreeList(void);
 void            printList(int);
 void            printListStats(void);
+struct proc*    findProc(int);
 #endif // CS333_P3
 #ifdef CS333_P4
 int             getPriority(int);
 int             setPriority(int, int);
+void            promoteProc(struct proc*);
+void            demoteProc(struct proc*);
+void            assertPriority(struct proc*);
+struct proc*    findReady(void);
 #endif //CS333_P4
 
 // swtch.S
