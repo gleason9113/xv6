@@ -135,7 +135,7 @@ allocproc(void)
   assertState(p, UNUSED, __FUNCTION__, __LINE__);
   p->state = EMBRYO;
 #ifdef CS333_P4
-    p->priority = MAXPRIO;
+    p->priority = MAXPRIO; //Set priority when added to EMRYO
     p->budget = DEFAULT_BUDGET;
 #endif
   stateListAdd(&ptable.list[EMBRYO], p);
