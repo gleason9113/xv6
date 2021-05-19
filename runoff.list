@@ -84,6 +84,7 @@ loopforever.c
 prio_test.c
 p4-priority.c
 budget-test.c
+prio_loop.c
 
 # bootloader
 bootasm.S

@@ -139,7 +139,6 @@ struct proc*    findProc(int);
 #ifdef CS333_P4
 int             getPriority(int);
 int             setPriority(int, int);
-void            promoteProc(struct proc*);
 void            assertPriority(struct proc*);
 struct proc*    findReady(void);
 #endif //CS333_P4

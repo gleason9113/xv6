@@ -461,6 +461,7 @@ fork(void)
     kfree(np->kstack);
     np->kstack = 0;
     np->state = UNUSED;
+    panic("The other one! \n");
     return -1;
   }
   np->sz = curproc->sz;
@@ -743,25 +744,25 @@ scheduler(void)
     //Check for promotion- loop through ready lists
     
     if(ticks >= ptable.PromoteAtTime){
+      long time = ptable.PromoteAtTime + ticks;
+//      cprintf("%s%d\n", "New value: ", time);
+      ptable.PromoteAtTime = time;
+//      cprintf("%s%d\n", "Promote: ", ptable.PromoteAtTime);
       struct proc* promote;
-      struct proc* temp;
       if(MAXPRIO > 0){
-        for(int j = MAXPRIO - 1; j >= 0; --j){
+        for(int j = MAXPRIO - 1; j>= 0; j--){
           promote = ptable.ready[j].head;
           while(promote){
-            temp = promote->next;
             if(stateListRemove(&ptable.ready[promote->priority], promote) == -1){
-              panic("Unable to promote process! \n");
+              panic("Unable to promote ready process!\n");
             }
-            promoteProc(promote); 
+            promote->priority = j + 1;
             stateListAdd(&ptable.ready[promote->priority], promote);
-            promote = temp;
+            promote = ptable.ready[j].head;
           }
         }
       }
-      ptable.PromoteAtTime = ticks + TICKS_TO_PROMOTE;
     }
-
       do {
         p = ptable.ready[i].head;
         if(p)
@@ -1763,12 +1764,14 @@ setPriority(int pid, int priority)
     p = ptable.ready[j].head;  //Point p at head of ready list
     while(p){ //Iterate through current ready list
       if(p->pid == pid){ //PID found- set priority and exit
-        if(stateListRemove(&ptable.ready[j], p) == -1){
-          panic("Unable to reset priority!\n");
+        if(p->priority != priority){
+          if(stateListRemove(&ptable.ready[j], p) == -1){
+            panic("Unable to reset priority!\n");
+          }
+          p->priority = priority;
+          stateListAdd(&ptable.ready[priority], p);        
         }
-        p->priority = priority;
         p->budget = DEFAULT_BUDGET;
-        stateListAdd(&ptable.ready[priority], p);        
         release(&ptable.lock);
         return priority;
       }
@@ -1816,26 +1819,6 @@ findProc(int pid){
 #endif //CS333_P3
 
 #ifdef CS333_P4
-//Promote a process
-//Accepts pointer to proc struct
-//Checks priority
-//If priority < MAXPRIO-1, increment and reset budget
-//else, reset budget
-//ptable lock held by calling process
-
-void
-promoteProc(struct proc* p){
-  if(!p)
-    panic("Attempt to promote null ptr!\n");
-  p->budget = DEFAULT_BUDGET;
-  if(MAXPRIO > 0 && p->priority < (MAXPRIO - 1)){
-    p->priority++;
-  }
-  if(p->priority < 0 || p->priority > (MAXPRIO - 1))
-    panic("Process promoted out of bounds!\n");
-  return;
-}
-
 
 void
 assertPriority(struct proc* p){
