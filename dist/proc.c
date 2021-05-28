@@ -754,6 +754,7 @@ scheduler(void)
               panic("Unable to promote ready process!\n");
             }
             promote->priority = j + 1;
+            promote->budget = DEFAULT_BUDGET;
             stateListAdd(&ptable.ready[promote->priority], promote);
             promote = ptable.ready[j].head;
           }

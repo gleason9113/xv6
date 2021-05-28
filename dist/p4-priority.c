@@ -51,7 +51,7 @@ checkPriority(void)
 
   pid = getpid();
   originalPriority = getpriority(pid);
-
+  sleep(5 * TPS);
   printf(1, "Priority after program start is %d\n", originalPriority);
   if (originalPriority != MAXPRIO) {
     printf(2, "Process didn't start at MAXPRIO\n");
